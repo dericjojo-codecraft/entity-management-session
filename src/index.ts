@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { User } from "./entities/user.entity.js";
 import { Employee } from "./entities/employee.entity.js";
 
@@ -14,8 +15,7 @@ const newUser = new User({
 });
 await newUser.save();
 
-const foundUser = await User.findById(1);
-console.log(foundUser);
+const foundUser = await User.findOne({id: 1});
 
 const newEmployee = new Employee({
     id: 1,
@@ -30,5 +30,4 @@ const newEmployee = new Employee({
 });
 await newEmployee.save();
 
-const foundEmployee = await Employee.findById(1);
-console
+const foundEmployee = await Employee.findOne({});

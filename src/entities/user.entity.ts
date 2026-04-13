@@ -1,8 +1,8 @@
-import { BaseEntity, type IBaseEntity } from "./base.entity.js";
+import { BaseEntity, type IBaseEntity } from "../core/base.entity.js";
 import { Table, TABLE_METADATA_KEY } from "./table.decorator.js";
 
 
-export interface IUser extends IBaseEntity {
+export interface IUser extends IBaseEntity<number> {
     name: string;
     address: string;
     dob: Date;
