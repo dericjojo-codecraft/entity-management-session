@@ -38,7 +38,7 @@ export abstract class BaseEntity implements IBaseEntity<number> {
         const update = keys.map(k => `${k} = VALUES(${k})`).join(', ');
         // TODO: 2. make drivers from MySQL and PostgreSQL
         //const query = getInsertQuery()
-        return `INSERT INTO ${BaseEntity.getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`
+        return `INSERT INTO ${(this.constructor as typeof BaseEntity).getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`
 
         // await db.execute(
         //     `INSERT INTO ${BaseEntity.getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`,
@@ -54,9 +54,9 @@ export abstract class BaseEntity implements IBaseEntity<number> {
     }
 
     // combine work done by findAll and findOne?
-    static async find<T extends BaseEntity, I extends IBaseEntity<number>>(this: new (entity: I) => T, conditions: Partial<I> = {}, limit? : number, offset?: number): Promise<void> {
+    static async find<T extends BaseEntity, I extends IBaseEntity<number>>(conditions: Partial<I> = {}, limit? : number, offset?: number): Promise<void> {
         const { queryCondition, values } = BaseEntity.conditionBuilder(conditions);
-        let query = `SELECT * FROM ${BaseEntity.getTableName()} ${queryCondition}`;
+        let query = `SELECT * FROM ${this.getTableName()} ${queryCondition}`;
 
         if(limit) { query = query + ` LIMIT ${limit}` };
         if(offset) { query = query + ` OFFSET ${offset}` };
@@ -78,9 +78,9 @@ export abstract class BaseEntity implements IBaseEntity<number> {
     }
 
     // combined method for delete
-    static async delete<I extends IBaseEntity<number>>(conditions: Partial<I> = {}):Promise<string> {
+    static async delete<I extends IBaseEntity<number>>(conditions: Partial<I> = {}):Promise<void> {
         const { queryCondition, values } = this.conditionBuilder(conditions);
-        return `DELETE FROM ${this.getTableName()} WHERE ${queryCondition}`;
+        console.log(`DELETE FROM ${this.getTableName()} WHERE ${queryCondition}`);
         //await db.execute(`DELETE FROM ${this.getTableName()} WHERE ${queryCondition}`.trim(), values);
 
     }

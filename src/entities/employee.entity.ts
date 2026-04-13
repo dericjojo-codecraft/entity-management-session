@@ -1,5 +1,5 @@
 import { BaseEntity, type IBaseEntity } from "../core/base.entity.js";
-import { Table, TABLE_METADATA_KEY } from "./table.decorator.js";
+import { Table, TABLE_METADATA_KEY } from "../core/table.decorator.js";
 
 export interface IEmployee extends IBaseEntity<number> {
 

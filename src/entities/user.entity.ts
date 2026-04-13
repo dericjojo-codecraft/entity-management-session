@@ -1,5 +1,5 @@
 import { BaseEntity, type IBaseEntity } from "../core/base.entity.js";
-import { Table, TABLE_METADATA_KEY } from "./table.decorator.js";
+import { Table, TABLE_METADATA_KEY } from "../core/table.decorator.js";
 
 
 export interface IUser extends IBaseEntity<number> {
@@ -24,5 +24,4 @@ export class User extends BaseEntity implements IUser {
         this.dob = user.dob;
         this.email = user.email;
     }
-    
 }

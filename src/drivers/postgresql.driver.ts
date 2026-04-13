@@ -20,7 +20,7 @@ export class MySQLDriver {
     }
 
     getInsertQuery(tablename: string, columns: string[]): string {
-        const placeholder = columns.map(() => this.getNumberedPlaceholder(i+1)).join(', ');
+        const placeholder = columns.map((_, i) => this.getNumberedPlaceholder(i+1)).join(', ');
         return `INSERT INTO ${tablename} (${columns.join(', ')}) VALUES (${placeholder})`;
     }
 
