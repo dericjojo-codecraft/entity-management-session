@@ -40,7 +40,7 @@ export abstract class BaseEntity implements IBaseEntity {
         const update = keys.map(k => `${k} = VALUES(${k})`).join(', ');
 
         await db.execute(
-            `INSERT INTO ${BaseEntity.getTableName()} (${cols}) VALUES (${marks}) ON CONFLICT(id) DO UPDATE SET ${update}`,
+            `INSERT INTO ${BaseEntity.getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`,
             Object.values(this)
         );
     }
@@ -54,10 +54,10 @@ export abstract class BaseEntity implements IBaseEntity {
 
     // TODO: findAll, findOne, ?findById
     // combine work done by findAll and findOne?
-    private static async find<T extends BaseEntity, I extends IBaseEntity>(this: new (entity: I) => T, conditions: Partial<I> = {}): Promise<T[]> {
+    static async find<T extends BaseEntity, I extends IBaseEntity>(this: new (entity: I) => T, conditions: Partial<I> = {}): Promise<T[]> {
         const { queryCondition, values } = BaseEntity.conditionBuilder(conditions);
         const results = await db.execute(
-            `SELECT * FROM ${BaseEntity.getTableName()} ${queryCondition}`.trim(),
+            `SELECT * FROM ${this.getTableName()} ${queryCondition}`.trim(),
             values
         );
         return results.map((row: I) => new this(row));
@@ -76,7 +76,7 @@ export abstract class BaseEntity implements IBaseEntity {
 
     // combined method for delete
     // TODO: deleteById, deleteAll, deleteOne
-    private static async delete<I extends IBaseEntity>(conditions: Partial<I> = {}):Promise<void> {
+    static async delete<I extends IBaseEntity>(conditions: Partial<I> = {}):Promise<void> {
         const { queryCondition, values } = this.conditionBuilder(conditions);
         await db.execute(`DELETE FROM ${this.getTableName} WHERE ${queryCondition}`.trim(), values);
     }
