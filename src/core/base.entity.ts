@@ -41,7 +41,7 @@ export abstract class BaseEntity implements IBaseEntity<number> {
         return `INSERT INTO ${(this.constructor as typeof BaseEntity).getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`
 
         // await db.execute(
-        //     `INSERT INTO ${BaseEntity.getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`,
+        //     `INSERT INTO ${(this.constructor as typeof BaseEntity).getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`,
         //     Object.values(this)
         // );
     }
@@ -53,7 +53,6 @@ export abstract class BaseEntity implements IBaseEntity<number> {
         return { queryCondition, values: Object.values(conditions) }
     }
 
-    // combine work done by findAll and findOne?
     static async find<T extends BaseEntity, I extends IBaseEntity<number>>(conditions: Partial<I> = {}, limit? : number, offset?: number): Promise<void> {
         const { queryCondition, values } = BaseEntity.conditionBuilder(conditions);
         let query = `SELECT * FROM ${this.getTableName()} ${queryCondition}`;
