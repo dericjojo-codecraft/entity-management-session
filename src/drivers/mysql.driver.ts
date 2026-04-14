@@ -29,8 +29,23 @@ export class MySQLDriver {
     }
 
     getDeleteQuery(tableName: string, conditions: Record<string, unknown>, limit?: number, offset?: number): string {
-        //const queryCondition = Object.keys(conditions).map(col => ); 
-        return `DELETE FROM ${tableName} WHERE ${queryCondition} LIMIT ${limit} OFFSET ${offset}`;
+        const whereClause = conditions && Object.keys(conditions) ? 'WHERE '+Object.keys(conditions).map(col => `${col} = ?`).join(" AND ") : '';
+        let query = `DELETE FROM ${tableName} ${whereClause}` ;
+        if(limit) { query += ` LIMIT ${limit}` };
+        if(offset) { query += ` OFFSET ${offset}` };
+        return query;
     }
     
+    getSelectQuery(tableName: string, columns: string[], conditions?: Record<string, unknown>, limit?: number, offset?: number): string {
+        const whereClause = conditions ? 'WHERE '+Object.keys(conditions).map(col => `${col} = ?`).join(" AND ") : '';
+        let query = `SELECT ${columns.join(', ')} FROM ${tableName} ${whereClause}`;
+        if(limit) { query += ` LIMIT ${limit}` };
+        if(offset) { query += ` OFFSET ${offset}` };
+        return query;
+    }
+
+    getCountQuery(tableName: string, conditions?: Record<string, unknown>): string {
+        const whereClause = conditions ? 'WHERE '+Object.keys(conditions).map(col => `${col} = ?`).join(" AND ") : '';
+        return `SELECT COUNT(*) FROM ${tableName} ${whereClause}`;
+    }
 }

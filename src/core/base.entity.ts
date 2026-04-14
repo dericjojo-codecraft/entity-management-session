@@ -1,4 +1,5 @@
-import { TABLE_METADATA_KEY } from './table.decorator.js';
+import 'reflect-metadata';
+import { Column, COLUMN_METADATA_KEY } from './column.decorator.js';
 
 export interface IBaseEntity<T> {
     id: T | undefined;
@@ -10,12 +11,17 @@ export interface IBaseEntity<T> {
 }
 
 export abstract class BaseEntity implements IBaseEntity<number> {
+    @Column('id')
     id: number | undefined;
 
     // TODO: 1. column decorator to make a basic whitelist of accepted column modifications
+    @Column('createdAt')
     createdAt: Date;
+    @Column('createdBy')
     createdBy: number;
+    @Column('updatedAt')
     updatedAt: Date;
+    @Column('updatedBy')
     updatedBy: number;
 
     constructor(entity: IBaseEntity<number>) {
@@ -27,7 +33,7 @@ export abstract class BaseEntity implements IBaseEntity<number> {
     }
     
     static getTableName(): string {
-        return Reflect.getMetadata(TABLE_METADATA_KEY, this);
+        return Reflect.getMetadata(COLUMN_METADATA_KEY, this);
     }
 
     // upsert
