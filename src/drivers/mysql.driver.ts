@@ -18,7 +18,7 @@ export class MySQLDriver {
     getInsertQuery(tablename: string, columns: string[]): string {
         const placeholder = columns.length ? "?, ".repeat(columns.length).slice(0, -2) : '';
         const update = columns.map(col => `${col} => VALUES(${col})}`).join(', ');
-        return `INSERT INTO ${tablename} (${columns}) VALUES (${placeholder}) ON DUPLICATE KEY UPDATE ${update}`;
+        return `INSERT INTO ${tablename} (${columns.join(', ')}) VALUES (${placeholder}) ON DUPLICATE KEY UPDATE ${update}`;
     }
 
     getUpdateQuery(tablename: string, columns: string[], conditions: Record<string, unknown>): string {

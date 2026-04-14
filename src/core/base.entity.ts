@@ -14,7 +14,6 @@ export abstract class BaseEntity implements IBaseEntity<number> {
     @Column('id')
     id: number | undefined;
 
-    // TODO: 1. column decorator to make a basic whitelist of accepted column modifications
     @Column('createdAt')
     createdAt: Date;
     @Column('createdBy')
@@ -38,12 +37,13 @@ export abstract class BaseEntity implements IBaseEntity<number> {
 
     // upsert
     async save(): Promise<string> {
-        const keys   = Object.keys(this);
+        const keys   = Object.keys(this).filter(key => Reflect.getMetadata(COLUMN_METADATA_KEY, Object.getPrototypeOf(this), key));
+        // move this to drivers as well(?)
         const cols   = keys.join(', ');
         const marks  = "?, ".repeat(keys.length).slice(0, -2);
         const update = keys.map(k => `${k} = VALUES(${k})`).join(', ');
-        // TODO: 2. make drivers from MySQL and PostgreSQL
-        //const query = getInsertQuery()
+        // TODO: 1. make drivers from MySQL and PostgreSQL
+        // const query = getInsertQuery()
         return `INSERT INTO ${(this.constructor as typeof BaseEntity).getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`
 
         // await db.execute(
