@@ -1,10 +1,12 @@
 import type { IDatabaseDriver } from "../core/db.js";
 import { Client } from 'pg';
 
+
 export class PostgreSQLDriver implements IDatabaseDriver{
     private client: Client;
 
     constructor() {
+        // ?better to pass connection string from index?
         this.client = new Client({ connectionString });
     }
 
