@@ -1,7 +1,21 @@
 import 'reflect-metadata';
 import { User } from "./entities/user.entity.js";
 import { Employee } from "./entities/employee.entity.js";
+import { DB } from './core/db.js'
+import { MySQLDriver } from './drivers/mysql.driver.js';
+import { PostgreSQLDriver } from './drivers/postgresql.driver.js';
 
+const config = {
+    host: "host",
+    user: "user",
+    password: "password",
+    database: "database"
+}
+
+const mySQLDriver = new MySQLDriver("mysql://root:password@localhost:3306/my_database");
+const postgreSQLDriver = new PostgreSQLDriver();
+
+DB.setDriver(mySQLDriver);
 const newUser = new User({
     id: 1,
     name: 'John Doe',
@@ -15,7 +29,8 @@ const newUser = new User({
 });
 await newUser.save();
 
-const foundUser = await User.findOne({id: 1});
+const foundUser = await User.find({id: 1});
+
 
 const newEmployee = new Employee({
     id: 1,
@@ -30,4 +45,4 @@ const newEmployee = new Employee({
 });
 await newEmployee.save();
 
-const foundEmployee = await Employee.findOne({});
+const foundEmployee = await Employee.find({id: 10}, 10);

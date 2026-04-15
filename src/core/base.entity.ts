@@ -1,5 +1,7 @@
 import 'reflect-metadata';
-import { Column, COLUMN_METADATA_KEY } from './column.decorator.js';
+import { Column, COLUMN_METADATA_KEY, COLUMNS_LIST_KEY } from './column.decorator.js';
+import { DB } from './db.js';
+import { TABLE_METADATA_KEY } from './table.decorator.js';
 
 export interface IBaseEntity<T> {
     id: T | undefined;
@@ -31,65 +33,33 @@ export abstract class BaseEntity implements IBaseEntity<number> {
         this.updatedBy = entity.updatedBy;
     }
     
-    static getTableName(): string {
-        return Reflect.getMetadata(COLUMN_METADATA_KEY, this);
+    private static getTableName(): string {
+        return Reflect.getMetadata(TABLE_METADATA_KEY, this);
+    }
+
+    private static getColumns(): string[] {
+        const propertyKeys: string[] = Reflect.getMetadata(COLUMNS_LIST_KEY, this.prototype) || []; 
+        return propertyKeys.map(key => Reflect.getMetadata(COLUMN_METADATA_KEY, this.prototype, key));
     }
 
     // upsert
     async save(): Promise<string> {
-        const keys   = Object.keys(this).filter(key => Reflect.getMetadata(COLUMN_METADATA_KEY, Object.getPrototypeOf(this), key));
-        // move this to drivers as well(?)
-        const cols   = keys.join(', ');
-        const marks  = "?, ".repeat(keys.length).slice(0, -2);
-        const update = keys.map(k => `${k} = VALUES(${k})`).join(', ');
-        // TODO: 1. make drivers from MySQL and PostgreSQL
-        // const query = getInsertQuery()
-        return `INSERT INTO ${(this.constructor as typeof BaseEntity).getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`
+        const tableName = (this.constructor as typeof BaseEntity).getTableName();
+        const keys = Object.keys(this).filter(key => Reflect.getMetadata(COLUMN_METADATA_KEY, Object.getPrototypeOf(this), key));
+        const query = DB.driver.getInsertQuery(tableName, keys);
+        return query;
 
-        // await db.execute(
-        //     `INSERT INTO ${(this.constructor as typeof BaseEntity).getTableName()} (${cols}) VALUES (${marks}) ON DUPLICATE KEY UPDATE ${update}`,
-        //     Object.values(this)
-        // );
+        // await db.execute(query, Object.values(this));
     }
 
-    // method to build the condition for the query and return an object with it
-    private static conditionBuilder<I>(conditions: Partial<I>) {
-        const keys = Object.keys(conditions);
-        const queryCondition = keys.length ? `WHERE ${keys.map(k => `${k} = ?`).join(" AND ")}` : '';
-        return { queryCondition, values: Object.values(conditions) }
-    }
-
-    static async find<T extends BaseEntity, I extends IBaseEntity<number>>(conditions: Partial<I> = {}, limit? : number, offset?: number): Promise<void> {
-        const { queryCondition, values } = BaseEntity.conditionBuilder(conditions);
-        let query = `SELECT * FROM ${this.getTableName()} ${queryCondition}`;
-
-        if(limit) { query = query + ` LIMIT ${limit}` };
-        if(offset) { query = query + ` OFFSET ${offset}` };
-
-        //const results = await db.execute(query.trim(), values);
-        //return results.map((row: I) => new this(row));
+    static async find<I extends IBaseEntity<number>>(conditions: Partial<I> = {}, limit? : number, offset: number=0): Promise<void> {
+        const query = DB.driver.getSelectQuery(this.getTableName(), this.getColumns(), conditions, limit, offset)
         console.log(query);
     }
 
-    static async findOne<T extends BaseEntity, I extends IBaseEntity<number>>(this: typeof BaseEntity, conditions: Partial<I>):Promise<void> {
-        const results = await (this as any).find(conditions);
-        //return results[0] ?? null;
-    } 
-
-    static async findAll<T extends BaseEntity, I extends IBaseEntity<number>>(
-        this: BaseEntity
-    ): Promise<T[]> {
-        return (this as any).find();
-    }
-
-    // combined method for delete
     static async delete<I extends IBaseEntity<number>>(conditions: Partial<I> = {}):Promise<void> {
-        const { queryCondition, values } = this.conditionBuilder(conditions);
-        console.log(`DELETE FROM ${this.getTableName()} WHERE ${queryCondition}`);
+        const query = DB.driver.getDeleteQuery(this.getTableName(), conditions);
+        console.log(query);
         //await db.execute(`DELETE FROM ${this.getTableName()} WHERE ${queryCondition}`.trim(), values);
-
     }
-    
-    static async deleteOne<I extends IBaseEntity<number>>(c: Partial<I>) { return this.delete(c) };
-    static async deleteAll() { return this.delete() };
 }

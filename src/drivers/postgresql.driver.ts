@@ -1,14 +1,30 @@
-export class MySQLDriver {
-    connect(): Promise<void> {
-        throw new Error("Method not implemented")
+import type { IDatabaseDriver } from "../core/db.js";
+import { Client } from 'pg';
+
+export class PostgreSQLDriver implements IDatabaseDriver{
+    private client: Client;
+
+    constructor() {
+        this.client = new Client({ connectionString });
     }
 
-    disconnect(): Promise<void> {
-        throw new Error("Method not implemented")
+    async connect(): Promise<void> {
+        if(this.client.connection) {
+            return ;
+        }
+        await this.client.connect();
     }
 
-    execute(): Promise<void> {
-        throw new Error("Method not implemented")
+    async disconnect(): Promise<void> {
+        if(!this.client.connection) {
+            return ;
+        }
+        await this.client.end();
+    }
+
+    async execute(query: string, params?: any[]): Promise<any> {
+        const result = await this.client.query(query, params);
+        return result.rows;
     }
 
     getPlaceholderPrefix(): string {
@@ -32,12 +48,9 @@ export class MySQLDriver {
         return `UPDATE ${tableName} SET (${setClause}) WHERE (${whereClause})`;
     }
 
-    getDeleteQuery(tableName: string, conditions: Record<string, unknown>, limit?: number, offset?: number): string {
+    getDeleteQuery(tableName: string, conditions: Record<string, unknown>): string {
         const whereClause = conditions && Object.keys(conditions) ? 'WHERE '+Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i+1)}`).join(" AND ") : '';
-        let query = `DELETE FROM ${tableName} ${whereClause}` ;
-        if(limit) { query += ` LIMIT ${limit}` };
-        if(offset) { query += ` OFFSET ${offset}` };
-        return query;
+        return `DELETE FROM ${tableName} ${whereClause}`;
     }
 
     getSelectQuery(tableName: string, columns: string[], conditions?: Record<string, unknown>, limit?: number, offset?: number): string {
