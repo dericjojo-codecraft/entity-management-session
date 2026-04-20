@@ -51,10 +51,15 @@ export class PostgreSQLDriver implements IDatabaseDriver {
         const whereClause = conditions && Object.keys(conditions).length
             ? 'WHERE ' + Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i + 1)}`).join(' AND ')
             : '';
-        let query = `DELETE FROM ${tableName} ${whereClause}`.trim();
-        if(limit)  { query += ` LIMIT ${limit}`  }
-        if(offset) { query += ` OFFSET ${offset}` }
-        return query;
+        
+        if (limit || offset) {
+            let subquery = `SELECT id FROM ${tableName} ${whereClause}`.trim();
+            if (limit) { subquery += ` LIMIT ${limit}`; }
+            if (offset) { subquery += ` OFFSET ${offset}`; }
+            return `DELETE FROM ${tableName} WHERE id IN (${subquery})`;
+        }
+        
+        return `DELETE FROM ${tableName} ${whereClause}`.trim();
     }
 
     getSelectQuery(tableName: string, columns: string[], conditions?: Record<string, unknown>, limit?: number, offset?: number): string {

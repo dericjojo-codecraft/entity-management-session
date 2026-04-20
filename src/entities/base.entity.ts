@@ -1,7 +1,9 @@
 import 'reflect-metadata';
-import { Column, COLUMN_METADATA_KEY, COLUMNS_LIST_KEY } from './column.decorator.js';
-import { DB } from './db.js';
-import { TABLE_METADATA_KEY } from './table.decorator.js';
+import { Column, COLUMN_METADATA_KEY, COLUMNS_LIST_KEY } from '../core/column.decorator.js';
+import { DB } from '../core/db.js';
+import { TABLE_METADATA_KEY } from '../core/table.decorator.js';
+
+type excludedColumn = "createdAt" | "createdBy" | "updatedAt" | "updatedBy";
 
 export interface IBaseEntity<T> {
     id: T | undefined;
@@ -42,6 +44,14 @@ export abstract class BaseEntity implements IBaseEntity<number> {
         return propertyKeys.map(key => Reflect.getMetadata(COLUMN_METADATA_KEY, this.prototype, key));
     }
 
+    private static getUpdateColumns(): string[] {
+        const propertyKeys: string[] = Reflect.getMetadata(COLUMNS_LIST_KEY, this.prototype) || [];
+        const excludedColumns: excludedColumn[] = ['createdAt', 'createdBy', 'updatedAt', 'updatedBy'];
+        return propertyKeys
+            .filter(key => !excludedColumns.includes(key as excludedColumn))
+            .map(key => Reflect.getMetadata(COLUMN_METADATA_KEY, this.prototype, key));
+    }
+
     // upsert
     async save(): Promise<string> {
         const tableName = (this.constructor as typeof BaseEntity).getTableName();
@@ -52,13 +62,24 @@ export abstract class BaseEntity implements IBaseEntity<number> {
         // await db.execute(query, Object.values(this));
     }
 
+    static async update<I extends IBaseEntity<number>>(updates: Partial<I>, conditions: Partial<I> = {}): Promise<void> {
+        const tableName = this.getTableName();
+        const updateColumns = this.getUpdateColumns();
+        const filteredUpdates = Object.fromEntries(
+            Object.entries(updates).filter(([key]) => updateColumns.includes(key))
+        );
+        const query = DB.driver.getUpdateQuery(tableName, Object.keys(filteredUpdates), conditions);
+        console.log(query);
+        // await db.execute(query, [...Object.values(filteredUpdates), ...Object.values(conditions)]);
+    }
+
     static async find<I extends IBaseEntity<number>>(conditions: Partial<I> = {}, limit? : number, offset: number=0): Promise<void> {
         const query = DB.driver.getSelectQuery(this.getTableName(), this.getColumns(), conditions, limit, offset)
         console.log(query);
     }
 
-    static async delete<I extends IBaseEntity<number>>(conditions: Partial<I> = {}):Promise<void> {
-        const query = DB.driver.getDeleteQuery(this.getTableName(), conditions);
+    static async delete<I extends IBaseEntity<number>>(conditions: Partial<I> = {}, limit?: number, offset?: number): Promise<void> {
+        const query = DB.driver.getDeleteQuery(this.getTableName(), conditions, limit, offset);
         console.log(query);
         //await db.execute(`DELETE FROM ${this.getTableName()} WHERE ${queryCondition}`.trim(), values);
     }

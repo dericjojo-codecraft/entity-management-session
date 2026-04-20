@@ -45,4 +45,4 @@ const newEmployee = new Employee({
 });
 await newEmployee.save();
 
-const foundEmployee = await Employee.find({id: 10}, 10);
+const foundEmployee = await Employee.delete({id: 10});

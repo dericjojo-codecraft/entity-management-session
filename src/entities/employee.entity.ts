@@ -1,4 +1,4 @@
-import { BaseEntity, type IBaseEntity } from "../core/base.entity.js";
+import { BaseEntity, type IBaseEntity } from "./base.entity.js";
 import { Column } from "../core/column.decorator.js";
 import { Table } from "../core/table.decorator.js";
 

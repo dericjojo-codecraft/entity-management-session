@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import type { BaseEntity } from './base.entity.js';
+import type { BaseEntity } from '../entities/base.entity.js';
 
 export const TABLE_METADATA_KEY = Symbol('table');
     
