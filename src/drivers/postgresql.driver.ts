@@ -1,25 +1,23 @@
 import type { IDatabaseDriver } from "../core/db.js";
 import { Client } from 'pg';
 
-
-export class PostgreSQLDriver implements IDatabaseDriver{
+export class PostgreSQLDriver implements IDatabaseDriver {
     private client: Client;
 
-    constructor() {
-        // ?better to pass connection string from index?
-        this.client = new Client({ connectionString });
+    constructor(configObject: Object) {
+        this.client = new Client(configObject);
     }
 
     async connect(): Promise<void> {
         if(this.client.connection) {
-            return ;
+            return;
         }
         await this.client.connect();
     }
 
     async disconnect(): Promise<void> {
         if(!this.client.connection) {
-            return ;
+            return;
         }
         await this.client.end();
     }
@@ -34,37 +32,45 @@ export class PostgreSQLDriver implements IDatabaseDriver{
     }
 
     getNumberedPlaceholder(i: number): string {
-        return this.getPlaceholderPrefix()+i;
+        return this.getPlaceholderPrefix() + i;
     }
 
-    getInsertQuery(tablename: string, columns: string[]): string {
-        const placeholder = columns.map((_, i) => this.getNumberedPlaceholder(i+1)).join(', ');
-        const update = columns.map((col, i) => `${col} => ${this.getNumberedPlaceholder(i+1)}`).join(', ');
-        return `INSERT INTO ${tablename} (${columns.join(', ')}) VALUES (${placeholder}) ON CONFLICT (id) DO UPDATE SET ${update}`;
+    getInsertQuery(tableName: string, columns: string[]): string {
+        const placeholder = columns.map((_, i) => this.getNumberedPlaceholder(i + 1)).join(', ');
+        const update = columns.map((col, i) => `${col} = ${this.getNumberedPlaceholder(i + 1)}`).join(', ');
+        return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholder}) ON CONFLICT (id) DO UPDATE SET ${update}`;
     }
 
     getUpdateQuery(tableName: string, columns: string[], conditions: Record<string, unknown>): string {
-        const setClause = columns.map((col, i) => `${col} = ${this.getNumberedPlaceholder(i+1)}`).join(", ");
-        const whereClause = Object.keys(conditions).map((k, i) => `${k} = ${this.getNumberedPlaceholder(i+1)}`).join(" AND ");
-
-        return `UPDATE ${tableName} SET (${setClause}) WHERE (${whereClause})`;
+        const setClause = columns.map((col, i) => `${col} = ${this.getNumberedPlaceholder(i + 1)}`).join(', ');
+        const whereClause = Object.keys(conditions).map((k, i) => `${k} = ${this.getNumberedPlaceholder(columns.length + i + 1)}`).join(' AND ');
+        return `UPDATE ${tableName} SET ${setClause} WHERE ${whereClause}`;
     }
 
-    getDeleteQuery(tableName: string, conditions: Record<string, unknown>): string {
-        const whereClause = conditions && Object.keys(conditions) ? 'WHERE '+Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i+1)}`).join(" AND ") : '';
-        return `DELETE FROM ${tableName} ${whereClause}`;
+    getDeleteQuery(tableName: string, conditions: Record<string, unknown>, limit?: number, offset?: number): string {
+        const whereClause = conditions && Object.keys(conditions).length
+            ? 'WHERE ' + Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i + 1)}`).join(' AND ')
+            : '';
+        let query = `DELETE FROM ${tableName} ${whereClause}`.trim();
+        if(limit)  { query += ` LIMIT ${limit}`  }
+        if(offset) { query += ` OFFSET ${offset}` }
+        return query;
     }
 
     getSelectQuery(tableName: string, columns: string[], conditions?: Record<string, unknown>, limit?: number, offset?: number): string {
-        const whereClause = conditions ? 'WHERE '+Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i+1)}`).join(" AND ") : '';
-        let query = `SELECT ${columns.join(', ')} FROM ${tableName} ${whereClause}`;
-        if(limit) { query += ` LIMIT ${limit}` };
-        if(offset) { query += ` OFFSET ${offset}` };
+        const whereClause = conditions && Object.keys(conditions).length
+            ? 'WHERE ' + Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i + 1)}`).join(' AND ')
+            : '';
+        let query = `SELECT ${columns.join(', ')} FROM ${tableName} ${whereClause}`.trim();
+        if(limit)  { query += ` LIMIT ${limit}`  }
+        if(offset) { query += ` OFFSET ${offset}` }
         return query;
     }
 
     getCountQuery(tableName: string, conditions?: Record<string, unknown>): string {
-        const whereClause = conditions ? 'WHERE '+Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i+1)}`).join(" AND ") : '';
-        return `SELECT COUNT(*) FROM ${tableName} ${whereClause}`;
-    }   
+        const whereClause = conditions && Object.keys(conditions).length
+            ? 'WHERE ' + Object.keys(conditions).map((col, i) => `${col} = ${this.getNumberedPlaceholder(i + 1)}`).join(' AND ')
+            : '';
+        return `SELECT COUNT(*) FROM ${tableName} ${whereClause}`.trim();
+    }
 }

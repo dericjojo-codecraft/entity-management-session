@@ -13,7 +13,7 @@ const config = {
 }
 
 const mySQLDriver = new MySQLDriver("mysql://root:password@localhost:3306/my_database");
-const postgreSQLDriver = new PostgreSQLDriver();
+const postgreSQLDriver = new PostgreSQLDriver(config);
 
 DB.setDriver(mySQLDriver);
 const newUser = new User({
